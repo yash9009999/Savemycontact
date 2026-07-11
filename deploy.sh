@@ -56,7 +56,7 @@ After=network.target
 User=$APP_USER
 Group=$APP_USER
 WorkingDirectory=$APP_DIR
-Environment="PATH=$APP_DIR/venv/bin"
+Environment="PATH=$APP_DIR/venv/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="SECRET_KEY=$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
 Environment="ADMIN_USER=admin"
 Environment="ADMIN_PASS=admin@5001"
