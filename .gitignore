@@ -11,3 +11,4 @@ all_contacts_merged.csv
 nohup.out
 .env
 venv/
+*.sock
