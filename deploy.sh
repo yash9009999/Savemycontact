@@ -19,7 +19,9 @@ apt-get update && apt-get upgrade -y
 
 # Install dependencies
 echo "[2/7] Installing system dependencies..."
-apt-get install -y python3 python3-pip python3-venv nginx tesseract-ocr git
+apt-get install -y python3 python3-pip python3-venv python3-dev nginx tesseract-ocr git \
+    libjpeg-dev libpng-dev libtiff-dev libwebp-dev zlib1g-dev libfreetype6-dev \
+    liblcms2-dev libopenjp2-7-dev build-essential
 
 # Clone repository
 echo "[3/7] Cloning repository..."
