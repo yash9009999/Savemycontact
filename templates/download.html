@@ -20,15 +20,7 @@
         </div>
 
         <h1 class="text-2xl font-bold text-white mb-2">Contacts Extracted!</h1>
-
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <p class="text-green-300 text-sm mb-6">{{ message }}</p>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+        <p class="text-green-300 text-sm mb-6">Found {{ contact_count }} contact{{ 's' if contact_count != 1 }} ready for download</p>
 
         <!-- Download Button -->
         <a href="{{ url_for('download_csv') }}" id="download-btn"
