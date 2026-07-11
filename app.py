@@ -330,10 +330,7 @@ def upload_images():
     db_session.add(archive_record)
     db_session.commit()
 
-    # Clean up uploaded images only (keep CSV for download)
-    cleanup_uploads()
-
-    # Store CSV filename in session for download
+    # Store CSV filename and results in session for download page
     flask_session['pending_csv'] = csv_filename
     flask_session['contact_count'] = len(unique_contacts)
     return redirect(url_for('download_page'))
@@ -346,7 +343,8 @@ def download_page():
         flash('No CSV available. Please upload images first.', 'error')
         return redirect(url_for('upload_form'))
     contact_count = flask_session.get('contact_count', 0)
-    return render_template('download.html', csv_file=csv_file, contact_count=contact_count)
+    images = db_session.query(ImageRecord).all()
+    return render_template('download.html', csv_file=csv_file, contact_count=contact_count, images=images)
 
 
 @app.route('/download/csv')
@@ -355,9 +353,10 @@ def download_csv():
     flask_session.pop('contact_count', None)
     if csv_file and os.path.exists(csv_file):
         response = send_file(csv_file, as_attachment=True)
-        # Delete CSV after sending
+        # Clean up everything after sending
         @response.call_on_close
-        def cleanup_csv():
+        def full_cleanup():
+            cleanup_uploads()
             if os.path.exists(csv_file):
                 os.remove(csv_file)
         return response
