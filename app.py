@@ -1,184 +1,40 @@
 import os
 import re
 import csv
+import hashlib
+import shutil
+from datetime import datetime
+from functools import wraps
 import pytesseract
 from PIL import Image, ImageEnhance, ImageFilter
-from flask import Flask, request, render_template, redirect, url_for, send_file
+from flask import Flask, request, render_template, redirect, url_for, send_file, flash, session as flask_session
 from werkzeug.utils import secure_filename
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.orm import declarative_base, sessionmaker  # Updated import for SQLAlchemy 2.0
-
-# Flask Setup
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'static/uploads/'
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your_default_secret_key')
-
-# Database Setup
-Base = declarative_base()
-engine = create_engine('sqlite:///images.db')
-Session = sessionmaker(bind=engine)
-session = Session()
-
-# Model to store image information, extracted text, and contacts
-class ImageRecord(Base):
-    __tablename__ = 'images'
-    id = Column(Integer, primary_key=True)
-    original_name = Column(String, nullable=False)
-    renamed_name = Column(String, nullable=False)
-    extracted_text = Column(String, nullable=True)
-    contacts = Column(String, nullable=True)
-
-# Create the database and tables if they don't exist
-Base.metadata.create_all(engine)
-
-# Function to preprocess and enhance the image before OCR
-def preprocess_image(image_path):
-    image = Image.open(image_path)
-    image = image.convert("L")
-    image = ImageEnhance.Contrast(image).enhance(2)
-    image = ImageEnhance.Sharpness(image).enhance(2)
-    return image
-
-# Function to clean OCR text for better extraction accuracy
-def clean_text(text):
-    text = re.sub(r'[^\w\s+]', '', text)
-    text = re.sub(r'\s+', ' ', text)
-    return text
-
-# Function to format phone numbers without adding country code
-def format_phone_number(phone):
-    phone = re.sub(r'[^\d]', '', phone)  # Remove all non-digit characters
-    if len(phone) > 10:
-        formatted_phone = re.sub(r'(\d{3})(\d{3})(\d{4})$', r'\1 \2 \3', phone)
-    else:
-        formatted_phone = re.sub(r'(\d{5})(\d{5})', r'\1 \2', phone)
-    return formatted_phone
-
-# Function to extract phone numbers from text and format them
-def extract_phone_numbers_from_text(text):
-    cleaned_text = clean_text(text)
-    phone_pattern = r'\b(?:\+?\d{1,3})?[-.\s]?\(?\d{2,4}?\)?[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4}\b'
-    potential_phones = re.findall(phone_pattern, cleaned_text)
-    unique_phones = list(set(potential_phones))
-
-    formatted_phones = [format_phone_number(phone) for phone in unique_phones]
-    return formatted_phones
-
-# Function to process a single image and extract text and contacts
-def process_single_image(image_path):
-    processed_image = preprocess_image(image_path)
-    extracted_text = pytesseract.image_to_string(processed_image, config='--oem 3 --psm 6')
-    phone_numbers = extract_phone_numbers_from_text(extracted_text)
-    contacts_text = ", ".join(phone_numbers) if phone_numbers else "No contacts found"
-    return extracted_text, phone_numbers
-
-# Function to clean up all files and database entries after download
-def cleanup():
-    # Delete all records from the database
-    session.query(ImageRecord).delete()
-    session.commit()
-    
-    # Remove all images in the upload folder
-    for filename in os.listdir(app.config['UPLOAD_FOLDER']):
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        if os.path.isfile(file_path):
-            os.remove(file_path)
-
-    # Remove the CSV file
-    csv_file = 'extracted_contacts.csv'
-    if os.path.exists(csv_file):
-        os.remove(csv_file)
-
-# Route to display the upload form with an input field for the base name
-@app.route('/')
-def upload_form():
-    return render_template('upload.html')
-
-# Route to handle multiple image uploads and generate a CSV file with contacts
-@app.route('/', methods=['POST'])
-def upload_images():
-    base_name = request.form.get('base_name')  # Get the base name from the form input
-    files = request.files.getlist('images')
-    if not files or files[0].filename == '':
-        return "No files selected"
-
-    all_contacts = []
-    uploaded_files = []
-
-    for file in files[:100]:  # Limit to 100 images
-        original_name = secure_filename(file.filename)
-        renamed_name = f"img_{original_name}"
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], renamed_name)
-
-        file.save(file_path)
-        
-        extracted_text, phone_numbers = process_single_image(file_path)
-        all_contacts.extend(phone_numbers)  # Add contacts from this image to the list
-
-        new_image = ImageRecord(
-            original_name=original_name,
-            renamed_name=renamed_name,
-            extracted_text=extracted_text,
-            contacts=", ".join(phone_numbers)
-        )
-        session.add(new_image)
-        session.commit()
-
-        uploaded_files.append(new_image)
-
-    # Generate CSV with all contacts
-    csv_filename = 'extracted_contacts.csv'
-    with open(csv_filename, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(["Name", "", "Phone"])  # "Name" header in A, "Phone" in C
-        for i, contact in enumerate(set(all_contacts), start=1):  # Add incremental number to base name
-            writer.writerow([f"{base_name} {i}", "", f"+ {contact}"])  # Name in A, phone in C
-
-    return redirect(url_for('show_results', csv_file=csv_filename))
-
-# Route to show results of all uploaded images
-@app.route('/results')
-def show_results():
-    images = session.query(ImageRecord).all()
-    csv_file = request.args.get('csv_file', None)
-    return render_template('results.html', images=images, csv_file=csv_file)
-
-# Route to download the generated CSV file and clean up
-@app.route('/download/<csv_file>')
-def download_csv(csv_file):
-    if os.path.exists(csv_file):
-        response = send_file(csv_file, as_attachment=True)
-        cleanup()  # Call the cleanup function after serving the CSV file
-        return response
-    else:
-        return "CSV file not found", 404
-
-if __name__ == "__main__":
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    port = int(os.environ.get("PORT", 5000))  # Use PORT from environment, default to 5000
-    app.run(host="0.0.0.0", port=port, debug=False)  # Use production settings
-import os
-import re
-import csv
-import pytesseract
-from PIL import Image, ImageEnhance
-from flask import Flask, request, render_template, redirect, url_for, send_file
-from werkzeug.utils import secure_filename
-from sqlalchemy import create_engine, Column, Integer, String, inspect
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Flask Setup
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads/'
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your_default_secret_key')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'supersecretkey123')
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload
+app.config['CSV_ARCHIVE_FOLDER'] = 'csv_archive/'
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'webp'}
+
+# Admin credentials - change these!
+# Password is hashed with SHA-256 for security
+ADMIN_USERNAME = os.environ.get('ADMIN_USER', 'admin')
+ADMIN_PASSWORD_HASH = hashlib.sha256(
+    os.environ.get('ADMIN_PASS', 'admin@5001').encode()
+).hexdigest()
 
 # Database Setup
 Base = declarative_base()
-engine = create_engine('sqlite:///images.db')
+engine = create_engine('sqlite:///images.db', echo=False)
 Session = sessionmaker(bind=engine)
-session = Session()
+db_session = Session()
 
-# Model to store image information, extracted text, and contacts
+
 class ImageRecord(Base):
     __tablename__ = 'images'
     id = Column(Integer, primary_key=True)
@@ -187,91 +43,253 @@ class ImageRecord(Base):
     extracted_text = Column(String, nullable=True)
     contacts = Column(String, nullable=True)
 
-# Create the database and tables if they don't exist
-if not inspect(engine).has_table("images"):
-    Base.metadata.create_all(engine)
 
-# Function to preprocess and enhance the image before OCR
+class CsvArchive(Base):
+    __tablename__ = 'csv_archives'
+    id = Column(Integer, primary_key=True)
+    filename = Column(String, nullable=False)
+    base_name = Column(String, nullable=False)
+    contact_count = Column(Integer, default=0)
+    created_at = Column(String, nullable=False)
+
+
+Base.metadata.create_all(engine)
+
+
+def login_required(f):
+    """Decorator to protect admin routes."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not flask_session.get('admin_logged_in'):
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Country code rules based on number length (digits only, without country code)
+# Map: number_of_digits -> country_code
+COUNTRY_CODE_MAP = {
+    10: '+91',   # India (10 digits)
+    11: '+1',    # USA/Canada (11 digits including country code 1 + 10 digits)
+    12: '+92',   # Pakistan (12 digits including country code)
+}
+
+# Known country code prefixes (digits after removing +)
+KNOWN_COUNTRY_PREFIXES = {
+    '1': '+1',      # USA/Canada
+    '7': '+7',      # Russia
+    '20': '+20',    # Egypt
+    '27': '+27',    # South Africa
+    '30': '+30',    # Greece
+    '31': '+31',    # Netherlands
+    '33': '+33',    # France
+    '34': '+34',    # Spain
+    '39': '+39',    # Italy
+    '44': '+44',    # UK
+    '49': '+49',    # Germany
+    '55': '+55',    # Brazil
+    '61': '+61',    # Australia
+    '62': '+62',    # Indonesia
+    '63': '+63',    # Philippines
+    '64': '+64',    # New Zealand
+    '65': '+65',    # Singapore
+    '66': '+66',    # Thailand
+    '81': '+81',    # Japan
+    '82': '+82',    # South Korea
+    '86': '+86',    # China
+    '90': '+90',    # Turkey
+    '91': '+91',    # India
+    '92': '+92',    # Pakistan
+    '93': '+93',    # Afghanistan
+    '94': '+94',    # Sri Lanka
+    '95': '+95',    # Myanmar
+    '98': '+98',    # Iran
+    '121': '+121',  # Custom/reserved
+    '212': '+212',  # Morocco
+    '234': '+234',  # Nigeria
+    '254': '+254',  # Kenya
+    '255': '+255',  # Tanzania
+    '256': '+256',  # Uganda
+    '263': '+263',  # Zimbabwe
+    '353': '+353',  # Ireland
+    '355': '+355',  # Albania
+    '358': '+358',  # Finland
+    '370': '+370',  # Lithuania
+    '371': '+371',  # Latvia
+    '372': '+372',  # Estonia
+    '375': '+375',  # Belarus
+    '380': '+380',  # Ukraine
+    '420': '+420',  # Czech Republic
+    '421': '+421',  # Slovakia
+    '880': '+880',  # Bangladesh
+    '886': '+886',  # Taiwan
+    '960': '+960',  # Maldives
+    '961': '+961',  # Lebanon
+    '962': '+962',  # Jordan
+    '963': '+963',  # Syria
+    '964': '+964',  # Iraq
+    '965': '+965',  # Kuwait
+    '966': '+966',  # Saudi Arabia
+    '967': '+967',  # Yemen
+    '968': '+968',  # Oman
+    '971': '+971',  # UAE
+    '972': '+972',  # Israel
+    '973': '+973',  # Bahrain
+    '974': '+974',  # Qatar
+    '975': '+975',  # Bhutan
+    '976': '+976',  # Mongolia
+    '977': '+977',  # Nepal
+}
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def detect_country_code(phone_digits):
+    """
+    Detect and add the appropriate country code to a phone number.
+    If the number already has a country code prefix, format it properly.
+    Otherwise, assign based on digit length.
+    """
+    # Check if number already starts with a known country code
+    for prefix_len in [3, 2, 1]:
+        prefix = phone_digits[:prefix_len]
+        if prefix in KNOWN_COUNTRY_PREFIXES:
+            # Number already has country code, format it
+            country_code = KNOWN_COUNTRY_PREFIXES[prefix]
+            local_number = phone_digits[prefix_len:]
+            if len(local_number) >= 7:  # Valid local number
+                return f"{country_code} {local_number}"
+
+    # No known prefix found - assign country code based on digit count
+    num_digits = len(phone_digits)
+
+    if num_digits == 10:
+        # Most likely Indian number
+        return f"+91 {phone_digits}"
+    elif num_digits == 11:
+        # Could be US/Canada (1 + 10 digits) or other
+        if phone_digits.startswith('0'):
+            # Local format with leading 0, likely Indian landline
+            return f"+91 {phone_digits[1:]}"
+        else:
+            return f"+1 {phone_digits[1:]}"
+    elif num_digits == 12:
+        # Check first 2 digits for country code
+        if phone_digits.startswith('91'):
+            return f"+91 {phone_digits[2:]}"
+        elif phone_digits.startswith('92'):
+            return f"+92 {phone_digits[2:]}"
+        elif phone_digits.startswith('44'):
+            return f"+44 {phone_digits[2:]}"
+        else:
+            return f"+{phone_digits[:2]} {phone_digits[2:]}"
+    elif num_digits == 13:
+        # 3-digit country code + 10 digits
+        if phone_digits.startswith('091'):
+            return f"+91 {phone_digits[3:]}"
+        else:
+            return f"+{phone_digits[:3]} {phone_digits[3:]}"
+    elif num_digits < 10 and num_digits >= 7:
+        # Short number, assume local Indian
+        return f"+91 {phone_digits}"
+    else:
+        # Unknown format, return as-is with +
+        return f"+{phone_digits}"
+
+
 def preprocess_image(image_path):
+    """Preprocess image for better OCR accuracy."""
     image = Image.open(image_path)
-    image = image.convert("L")  # Convert to grayscale
-    image = ImageEnhance.Contrast(image).enhance(2)  # Increase contrast
-    image = ImageEnhance.Sharpness(image).enhance(2)  # Sharpen the image
+    image = image.convert("L")  # Grayscale
+    image = ImageEnhance.Contrast(image).enhance(2.0)
+    image = ImageEnhance.Sharpness(image).enhance(2.0)
+    image = image.filter(ImageFilter.MedianFilter(size=3))
     return image
 
-# Function to clean OCR text for better extraction accuracy
-def clean_text(text):
-    text = re.sub(r'[^\w\s+]', '', text)
-    text = re.sub(r'\s+', ' ', text)
-    return text
 
-# Function to format phone numbers without adding country code
-def format_phone_number(phone):
-    phone = re.sub(r'[^\d]', '', phone)
-    if len(phone) > 10:
-        formatted_phone = re.sub(r'(\d{3})(\d{3})(\d{4})$', r'\1 \2 \3', phone)
-    else:
-        formatted_phone = re.sub(r'(\d{5})(\d{5})', r'\1 \2', phone)
-    return formatted_phone
+def extract_phone_numbers(text):
+    """Extract phone numbers from OCR text and add country codes."""
+    # Multiple patterns to catch different phone number formats
+    patterns = [
+        r'\+?\d{1,3}[-.\s]?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}',
+        r'\b\d{10,13}\b',
+        r'\b\d{3,5}[-.\s]\d{3,5}[-.\s]\d{3,5}\b',
+        r'\(\d{2,4}\)\s?\d{3,4}[-.\s]?\d{3,4}',
+    ]
 
-# Function to extract phone numbers from text and format them
-def extract_phone_numbers_from_text(text):
-    cleaned_text = clean_text(text)
-    phone_pattern = r'\b(?:\+?\d{1,3})?[-.\s]?\(?\d{2,4}?\)?[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4}\b'
-    potential_phones = re.findall(phone_pattern, cleaned_text)
-    unique_phones = list(set(potential_phones))
+    found_numbers = set()
+    for pattern in patterns:
+        matches = re.findall(pattern, text)
+        for match in matches:
+            # Extract only digits
+            digits = re.sub(r'[^\d]', '', match)
+            if 7 <= len(digits) <= 15:
+                found_numbers.add(digits)
 
-    formatted_phones = [format_phone_number(phone) for phone in unique_phones]
-    return formatted_phones
+    # Add country codes and format
+    formatted_numbers = []
+    for digits in found_numbers:
+        formatted = detect_country_code(digits)
+        formatted_numbers.append(formatted)
 
-# Function to process a single image and extract text and contacts
+    return formatted_numbers
+
+
 def process_single_image(image_path):
+    """Process an image: OCR extraction + phone number detection with country codes."""
     processed_image = preprocess_image(image_path)
-    extracted_text = pytesseract.image_to_string(processed_image, config='--oem 3 --psm 6')
-    phone_numbers = extract_phone_numbers_from_text(extracted_text)
-    contacts_text = ", ".join(phone_numbers) if phone_numbers else "No contacts found"
-    return extracted_text, phone_numbers
+    extracted_text = pytesseract.image_to_string(
+        processed_image, config='--oem 3 --psm 6'
+    )
+    phone_numbers = extract_phone_numbers(extracted_text)
+    return extracted_text.strip(), phone_numbers
 
-# Function to clean up all files and database entries after download
+
 def cleanup():
-    # Delete all records from the database
-    session.query(ImageRecord).delete()
-    session.commit()
-    
-    # Remove all images in the upload folder
-    for filename in os.listdir(app.config['UPLOAD_FOLDER']):
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        if os.path.isfile(file_path):
-            os.remove(file_path)
+    """Remove all uploaded files, DB records, and generated CSV."""
+    db_session.query(ImageRecord).delete()
+    db_session.commit()
 
-    # Remove the CSV file
+    upload_folder = app.config['UPLOAD_FOLDER']
+    if os.path.exists(upload_folder):
+        for filename in os.listdir(upload_folder):
+            file_path = os.path.join(upload_folder, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
     csv_file = 'extracted_contacts.csv'
     if os.path.exists(csv_file):
         os.remove(csv_file)
 
-# Route to display the upload form with an input field for the base name
+
 @app.route('/')
 def upload_form():
     return render_template('upload.html')
 
-# Route to handle multiple image uploads and generate a CSV file with contacts
+
 @app.route('/', methods=['POST'])
 def upload_images():
-    base_name = request.form.get('base_name')  # Get the base name from the form input
+    base_name = request.form.get('base_name', 'Contact').strip()
+    if not base_name:
+        base_name = 'Contact'
+
     files = request.files.getlist('images')
     if not files or files[0].filename == '':
-        return "No files selected"
+        flash('No files selected.', 'error')
+        return redirect(url_for('upload_form'))
 
     all_contacts = []
-    uploaded_files = []
 
-    for file in files[:100]:  # Limit to 100 images
+    for file in files[:100]:
+        if not allowed_file(file.filename):
+            continue
+
         original_name = secure_filename(file.filename)
         renamed_name = f"img_{original_name}"
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], renamed_name)
-
         file.save(file_path)
-        
+
         extracted_text, phone_numbers = process_single_image(file_path)
         all_contacts.extend(phone_numbers)
 
@@ -279,41 +297,136 @@ def upload_images():
             original_name=original_name,
             renamed_name=renamed_name,
             extracted_text=extracted_text,
-            contacts=", ".join(phone_numbers)
+            contacts=", ".join(phone_numbers) if phone_numbers else "No contacts found"
         )
-        session.add(new_image)
-        session.commit()
+        db_session.add(new_image)
+        db_session.commit()
 
-        uploaded_files.append(new_image)
-
-    # Generate CSV with all contacts
+    # Generate CSV
     csv_filename = 'extracted_contacts.csv'
-    with open(csv_filename, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(["Name", "", "Phone"])
-        for i, contact in enumerate(set(all_contacts), start=1):
-            writer.writerow([f"{base_name} {i}", "", f"+ {contact}"])
+    unique_contacts = list(set(all_contacts))
+    with open(csv_filename, mode='w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(["Name", "Phone"])
+        for i, contact in enumerate(unique_contacts, start=1):
+            writer.writerow([f"{base_name} {i}", contact])
+
+    # Archive the CSV
+    os.makedirs(app.config['CSV_ARCHIVE_FOLDER'], exist_ok=True)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    archive_name = f"{base_name}_{timestamp}.csv"
+    archive_path = os.path.join(app.config['CSV_ARCHIVE_FOLDER'], archive_name)
+    shutil.copy2(csv_filename, archive_path)
+
+    archive_record = CsvArchive(
+        filename=archive_name,
+        base_name=base_name,
+        contact_count=len(unique_contacts),
+        created_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    )
+    db_session.add(archive_record)
+    db_session.commit()
 
     return redirect(url_for('show_results', csv_file=csv_filename))
 
-# Route to show results of all uploaded images
+
 @app.route('/results')
 def show_results():
-    images = session.query(ImageRecord).all()
+    images = db_session.query(ImageRecord).all()
     csv_file = request.args.get('csv_file', None)
     return render_template('results.html', images=images, csv_file=csv_file)
 
-# Route to download the generated CSV file and clean up
+
 @app.route('/download/<csv_file>')
 def download_csv(csv_file):
     if os.path.exists(csv_file):
         response = send_file(csv_file, as_attachment=True)
         cleanup()
         return response
-    else:
-        return "CSV file not found", 404
+    return "CSV file not found", 404
+
+
+# ==================== ADMIN PANEL ====================
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        username = request.form.get('username', '')
+        password = request.form.get('password', '')
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+
+        if username == ADMIN_USERNAME and password_hash == ADMIN_PASSWORD_HASH:
+            flask_session['admin_logged_in'] = True
+            return redirect(url_for('admin_dashboard'))
+        else:
+            flash('Invalid credentials.', 'error')
+            return redirect(url_for('admin_login'))
+
+    return render_template('admin_login.html')
+
+
+@app.route('/admin/logout')
+def admin_logout():
+    flask_session.pop('admin_logged_in', None)
+    return redirect(url_for('upload_form'))
+
+
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    archives = db_session.query(CsvArchive).order_by(CsvArchive.id.desc()).all()
+    return render_template('admin_dashboard.html', archives=archives)
+
+
+@app.route('/admin/download/<int:archive_id>')
+@login_required
+def admin_download_csv(archive_id):
+    archive = db_session.query(CsvArchive).filter_by(id=archive_id).first()
+    if archive:
+        file_path = os.path.join(app.config['CSV_ARCHIVE_FOLDER'], archive.filename)
+        if os.path.exists(file_path):
+            return send_file(file_path, as_attachment=True, download_name=archive.filename)
+    return "File not found", 404
+
+
+@app.route('/admin/delete/<int:archive_id>', methods=['POST'])
+@login_required
+def admin_delete_csv(archive_id):
+    archive = db_session.query(CsvArchive).filter_by(id=archive_id).first()
+    if archive:
+        file_path = os.path.join(app.config['CSV_ARCHIVE_FOLDER'], archive.filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        db_session.delete(archive)
+        db_session.commit()
+        flash('Archive deleted.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+
+@app.route('/admin/download-all')
+@login_required
+def admin_download_all():
+    """Download all archived CSVs as a single merged CSV."""
+    archives = db_session.query(CsvArchive).all()
+    merged_path = 'all_contacts_merged.csv'
+    with open(merged_path, mode='w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(["Name", "Phone", "Source File", "Date"])
+        for archive in archives:
+            file_path = os.path.join(app.config['CSV_ARCHIVE_FOLDER'], archive.filename)
+            if os.path.exists(file_path):
+                with open(file_path, 'r') as csvfile:
+                    reader = csv.reader(csvfile)
+                    next(reader, None)  # Skip header
+                    for row in reader:
+                        writer.writerow(row + [archive.filename, archive.created_at])
+    if os.path.exists(merged_path):
+        return send_file(merged_path, as_attachment=True, download_name='all_contacts_merged.csv')
+    return "No archives found", 404
+
 
 if __name__ == "__main__":
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    os.makedirs(app.config['CSV_ARCHIVE_FOLDER'], exist_ok=True)
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=True)

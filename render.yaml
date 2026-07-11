@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: contact-extractor
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn app:app --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_USER
+        value: admin
+      - key: ADMIN_PASS
+        value: admin@5001
+      - key: PYTHON_VERSION
+        value: "3.11.6"

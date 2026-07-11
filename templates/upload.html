@@ -3,285 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Images</title>
+    <title>Contact Extractor - Upload Images</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kdam+Thmor+Pro&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-  padding: 0;
-  margin: 0;
-  box-sizing: border-box;
-}
-body {
-  height: 100vh;
-  width: 100vw;
-  background: linear-gradient(5deg, #182131, #4b6797);
-  overflow: hidden;
-}
-.grey_cir {
-  background-color: rgb(247, 247, 247);
-  display: block;
-  border-radius: 100%;
-  background-color: rgba(255, 252, 252, 0.27);
-}
-
-#c_1 {
-  height: 50vh;
-  width: 30vw;
-  margin-left: -10vw;
-  margin-top: -20vh;
-  scale: 1.5;
-  box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
-}
-#c_2 {
-  height: 30vh;
-  width: 18vw;
-  margin-right: -9vw;
-  margin-top: -10vh;
-  box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
-}
-.h_c {
-  display: flex;
-  justify-content: space-between;
-}
-.main {
-  align-items: center;
-  margin-top: -19vh;
-}
-#c_3 {
-  height: 16vh;
-  width: 10vw;
-  margin-left: -5vw;
-  scale: 1.5;
-  margin-top: 7vh;
-}
-#rect {
-  height: 84vh;
-  background: linear-gradient(to bottom, #60bafa, #a054fc);
-  width: 18vw;
-  display: block;
-  margin-right: 5vh;
-  margin-top: -3vh;
-  border-radius: 30px;
-  opacity: 60%;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px;
-  z-index: 0;
-}
-.circles {
-  position: grid;
-  margin-top: -76vh;
-  margin-left: 61vw;
-  justify-content: center;
-  align-items: center;
-  align-content: center;
-}
-#c_4 {
-  height: 60vh;
-  width: 36vw;
-  background-color: rgba(255, 252, 252, 1);
-  opacity: 5%;
-  position: fixed;
-}
-#d_4 {
-  height: 60vh;
-  width: 36vw;
-  position: fixed;
-  z-index: 999;
-  display: grid;
-  justify-content: center;
-  align-items: center;
-  align-content: center;
-}
-img {
-  position: fixed;
-  margin-left: 17vw;
-  rotate: -9deg;
-  scale: 0.9;
-}
-.c_1 {
-  height: 1.6vh;
-  width: 1vw;
-  background-color: #780efa;
-  display: block;
-  border-radius: 100%;
-  border: 2px solid white;
-  position: fixed;
-  margin-left: 17.5vw;
-  margin-top: 3.8vh;
-  opacity: 100%;
-  box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px,
-    rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px,
-    rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
-}
-.c_2 {
-  height: 1.6vh;
-  width: 1vw;
-  background-color: gray;
-  display: block;
-  border-radius: 100%;
-  border: 2px solid white;
-  position: fixed;
-  margin-left: 32vw;
-  margin-top: 20vh;
-  box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px,
-    rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px,
-    rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
-}
-#c_5 {
-  height: 40vh;
-  width: 24vw;
-  background-color: #a1b1dc;
-  border-radius: 100%;
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px,
-    rgba(0, 0, 0, 0.3) 0px 30px 60px -30px;
-}
-.mm,
-#c_5 {
-  display: grid;
-  justify-content: center;
-  align-items: center;
-  align-content: center;
-}
-#m1 {
-  height: 20vh;
-  width: 12vw;
-  background-color: white;
-  border-radius: 100%;
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px,
-    rgba(0, 0, 0, 0.3) 0px 30px 60px -30px;
-}
-#m2 {
-  height: 14vh;
-  width: 8vw;
-  background-color: rgb(12, 12, 12);
-  border-radius: 100%;
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px,
-    rgba(0, 0, 0, 0.3) 0px 30px 60px -30px;
-}
-form {
-  position: fixed;
-  color: white;
-  margin-top: 10vh;
-  margin-left: 7vw;
-  h1 {
-    font-size: 7vh;
-  }
-  #base_name {
-    margin-top: 8vh;
-  }
-  /* Basic styling for input field */
-  input[type="text"] {
-    width: 50%; /* Full width */
-    padding: 10px; /* Inner padding for better user experience */
-    border: 1px solid #ccc; /* Light border */
-    border-radius: 4px;
-    color: goldenrod; /* Rounded corners */
-    font-size: 16px; /* Font size */
-    box-sizing: border-box; /* Ensures padding is included in the element's width */
-    transition: border-color 0.3s ease; /* Smooth transition for hover and focus effects */
-    background: linear-gradient(to left, #60bafa, #a054fc);
-  }
-
-  /* Change border color on focus */
-  input[type="text"]:focus {
-    border-color: #4a90e2; /* Border color on focus */
-    outline: none; /* Remove default outline */
-  }
-
-  /* Style for input in error state */
-  input[type="text"].error {
-    border-color: #e74c3c; /* Red border for errors */
-  }
-
-  /* Optional: Disabled state */
-  input[type="text"]:disabled {
-    background-color: #f2f2f2; /* Light gray background for disabled input */
-    cursor: not-allowed; /* Change cursor */
-  }
-  /* Hide default file input */
-input[type="file"] {
-    display: none;
-}
-
-/* Custom file upload button */
-label.file-upload {
-    display: inline-block;
-    padding: 10px 20px;
-    background: linear-gradient(to left, #60bafa, #a054fc);
-    color: #fff;
-    font-size: 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    text-align: center;
-    transition: opacity 0.4s ease;
-    margin-bottom: 10px; /* Adds space below the button */
-}
-
-/* Hover effect for file upload button */
-label.file-upload:hover {
-    opacity: 60%;
-}
-
-/* Style for submit button */
-button[type="submit"] {
-    padding: 10px 20px;
-    font-size: 16px;
-    background-color: #a1b1dc; /* Green background */
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-/* Hover effect for submit button */
-button[type="submit"]:hover {
-    background-color: #7996e4;
-}
-
-/* Optional: Disabled state for submit button */
-button[type="submit"]:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-
-}
-
+        * { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body>
-    <div class="h_c">
-        <span class="grey_cir" id="c_1"></span>
-        <span class="grey_cir" id="c_2"></span>
-    </div>
-    <div class="main h_c">
-        <span class="grey_cir" id="c_3"></span>
-        <div id="rect"></div>
-    </div>
-    <div class="circles">
-        <span class="grey_cir" id="c_4"></span>
-        <span class="grey_cir" id="d_4">
-          
-            <span class="c_1"></span>
-            <span class="c_2"></span>
-            <div id="c_5">
-                <div class="mm" id="m1">
-                    <div class="mm" id="m2"></div>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-lg">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-600/20 border border-purple-500/30 mb-4">
+                    <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold text-white mb-2">Contact Extractor</h1>
+                <p class="text-slate-400">Upload images to extract phone numbers with auto country code detection</p>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-500/20 border border-red-500/30 text-red-300{% else %}bg-green-500/20 border border-green-500/30 text-green-300{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Upload Form -->
+            <form action="/" method="post" enctype="multipart/form-data" class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
+                <!-- Base Name Input -->
+                <div class="mb-6">
+                    <label for="base_name" class="block text-sm font-medium text-slate-300 mb-2">Contact Name Prefix</label>
+                    <input type="text" id="base_name" name="base_name" placeholder="e.g. Customer, Lead, Client"
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        required>
+                    <p class="mt-1.5 text-xs text-slate-500">Contacts will be named: Prefix 1, Prefix 2, etc.</p>
+                </div>
+
+                <!-- File Upload Area -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Upload Images</label>
+                    <div id="drop-zone" class="relative border-2 border-dashed border-white/20 rounded-xl p-8 text-center hover:border-purple-500/50 transition-all cursor-pointer">
+                        <input type="file" id="images" name="images" multiple required accept="image/*"
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        <div id="upload-icon">
+                            <svg class="mx-auto w-12 h-12 text-slate-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <p class="text-slate-400 text-sm">Drag & drop images here or <span class="text-purple-400 font-medium">browse</span></p>
+                            <p class="text-slate-600 text-xs mt-1">PNG, JPG, JPEG, GIF, BMP, TIFF, WEBP (max 100 images)</p>
+                        </div>
+                        <div id="file-info" class="hidden">
+                            <svg class="mx-auto w-10 h-10 text-green-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <p id="file-count" class="text-green-300 font-medium"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="submit-btn"
+                    class="w-full py-3.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-purple-500/25">
+                    <span id="btn-text" class="flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        Upload & Extract Contacts
+                    </span>
+                    <span id="btn-loading" class="hidden flex items-center justify-center gap-2">
+                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        Processing...
+                    </span>
+                </button>
+            </form>
+
+            <!-- Features -->
+            <div class="mt-8 grid grid-cols-3 gap-4 text-center">
+                <div class="p-3">
+                    <div class="text-purple-400 font-bold text-lg">OCR</div>
+                    <p class="text-slate-500 text-xs">Extracts text from images</p>
+                </div>
+                <div class="p-3">
+                    <div class="text-blue-400 font-bold text-lg">Auto +CC</div>
+                    <p class="text-slate-500 text-xs">Adds country codes automatically</p>
+                </div>
+                <div class="p-3">
+                    <div class="text-green-400 font-bold text-lg">CSV</div>
+                    <p class="text-slate-500 text-xs">Download contacts as CSV</p>
                 </div>
             </div>
-        </span>
+        </div>
     </div>
-    <form action="/" method="post" enctype="multipart/form-data">
-        <h1>Upload Images and Set Base</h1>
-        <h1>Name for Contacts</h1>
-        <input type="text" id="base_name" name="base_name"  placeholder="Base Name for Contact" required>
-        <br><br>
-        <input type="file" id="images" name="images" multiple required>
-<label for="images" class="file-upload">Choose Images</label>
-<br><br>
-<button type="submit">Upload and Extract Contacts</button>
 
-    </form>
+    <script>
+        const fileInput = document.getElementById('images');
+        const uploadIcon = document.getElementById('upload-icon');
+        const fileInfo = document.getElementById('file-info');
+        const fileCount = document.getElementById('file-count');
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnLoading = document.getElementById('btn-loading');
+        const dropZone = document.getElementById('drop-zone');
+
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                uploadIcon.classList.add('hidden');
+                fileInfo.classList.remove('hidden');
+                fileCount.textContent = this.files.length + ' image' + (this.files.length > 1 ? 's' : '') + ' selected';
+            } else {
+                uploadIcon.classList.remove('hidden');
+                fileInfo.classList.add('hidden');
+            }
+        });
+
+        // Drag and drop visual feedback
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('border-purple-500', 'bg-purple-500/10');
+        });
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('border-purple-500', 'bg-purple-500/10');
+        });
+        dropZone.addEventListener('drop', function(e) {
+            this.classList.remove('border-purple-500', 'bg-purple-500/10');
+        });
+
+        // Loading state on submit
+        document.querySelector('form').addEventListener('submit', function() {
+            btnText.classList.add('hidden');
+            btnLoading.classList.remove('hidden');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+        });
+    </script>
 </body>
 </html>

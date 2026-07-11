@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+images.db
+static/uploads/*
+!static/uploads/.gitkeep
+csv_archive/*
+!csv_archive/.gitkeep
+extracted_contacts.csv
+all_contacts_merged.csv
+nohup.out
+.env
+venv/
