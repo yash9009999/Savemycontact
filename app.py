@@ -276,6 +276,13 @@ def upload_images():
         flash('No files selected.', 'error')
         return redirect(url_for('upload_form'))
 
+    # Clear previous session data (old images, old CSV)
+    cleanup_uploads()
+    old_csv = flask_session.pop('pending_csv', None)
+    if old_csv and os.path.exists(old_csv):
+        os.remove(old_csv)
+    flask_session.pop('contact_count', None)
+
     all_contacts = []
 
     for file in files[:100]:
