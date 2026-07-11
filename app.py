@@ -3,6 +3,7 @@ import re
 import csv
 import hashlib
 import shutil
+import psutil
 from datetime import datetime
 from functools import wraps
 import pytesseract
@@ -423,6 +424,57 @@ def admin_download_all():
     if os.path.exists(merged_path):
         return send_file(merged_path, as_attachment=True, download_name='all_contacts_merged.csv')
     return "No archives found", 404
+
+
+@app.route('/admin/stats')
+@login_required
+def admin_stats():
+    """Return server stats as JSON for the admin dashboard."""
+    # CPU
+    cpu_percent = psutil.cpu_percent(interval=0.5)
+    cpu_count = psutil.cpu_count()
+
+    # Memory
+    mem = psutil.virtual_memory()
+    mem_total_gb = round(mem.total / (1024 ** 3), 2)
+    mem_used_gb = round(mem.used / (1024 ** 3), 2)
+    mem_percent = mem.percent
+
+    # Disk
+    disk = psutil.disk_usage('/')
+    disk_total_gb = round(disk.total / (1024 ** 3), 2)
+    disk_used_gb = round(disk.used / (1024 ** 3), 2)
+    disk_free_gb = round(disk.free / (1024 ** 3), 2)
+    disk_percent = disk.percent
+
+    # Uptime
+    import time
+    uptime_seconds = int(time.time() - psutil.boot_time())
+    days = uptime_seconds // 86400
+    hours = (uptime_seconds % 86400) // 3600
+    minutes = (uptime_seconds % 3600) // 60
+    uptime_str = f"{days}d {hours}h {minutes}m"
+
+    # Network
+    net = psutil.net_io_counters()
+    net_sent_mb = round(net.bytes_sent / (1024 ** 2), 1)
+    net_recv_mb = round(net.bytes_recv / (1024 ** 2), 1)
+
+    from flask import jsonify
+    return jsonify({
+        'cpu_percent': cpu_percent,
+        'cpu_count': cpu_count,
+        'mem_total_gb': mem_total_gb,
+        'mem_used_gb': mem_used_gb,
+        'mem_percent': mem_percent,
+        'disk_total_gb': disk_total_gb,
+        'disk_used_gb': disk_used_gb,
+        'disk_free_gb': disk_free_gb,
+        'disk_percent': disk_percent,
+        'uptime': uptime_str,
+        'net_sent_mb': net_sent_mb,
+        'net_recv_mb': net_recv_mb,
+    })
 
 
 if __name__ == "__main__":

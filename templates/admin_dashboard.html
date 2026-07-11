@@ -43,6 +43,96 @@
             </div>
         </div>
 
+        <!-- Server Monitor -->
+        <div class="mb-8">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+                </svg>
+                Server Monitor
+                <span id="stats-status" class="ml-auto text-xs text-green-400 font-normal flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span> Live
+                </span>
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <!-- CPU -->
+                <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-slate-500 uppercase font-semibold">CPU</span>
+                        <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+                        </svg>
+                    </div>
+                    <p class="text-2xl font-bold text-white" id="cpu-percent">--</p>
+                    <div class="mt-2 w-full bg-white/10 rounded-full h-1.5">
+                        <div id="cpu-bar" class="h-1.5 rounded-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <p class="text-xs text-slate-600 mt-1"><span id="cpu-cores">--</span> cores</p>
+                </div>
+                <!-- RAM -->
+                <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-slate-500 uppercase font-semibold">RAM</span>
+                        <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                    </div>
+                    <p class="text-2xl font-bold text-white" id="mem-percent">--</p>
+                    <div class="mt-2 w-full bg-white/10 rounded-full h-1.5">
+                        <div id="mem-bar" class="h-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <p class="text-xs text-slate-600 mt-1"><span id="mem-used">--</span> / <span id="mem-total">--</span> GB</p>
+                </div>
+                <!-- Disk -->
+                <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-slate-500 uppercase font-semibold">Disk</span>
+                        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                        </svg>
+                    </div>
+                    <p class="text-2xl font-bold text-white" id="disk-percent">--</p>
+                    <div class="mt-2 w-full bg-white/10 rounded-full h-1.5">
+                        <div id="disk-bar" class="h-1.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <p class="text-xs text-slate-600 mt-1"><span id="disk-free">--</span> GB free</p>
+                </div>
+                <!-- Network Sent -->
+                <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-slate-500 uppercase font-semibold">Net Sent</span>
+                        <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/>
+                        </svg>
+                    </div>
+                    <p class="text-2xl font-bold text-white" id="net-sent">--</p>
+                    <p class="text-xs text-slate-600 mt-3">MB total</p>
+                </div>
+                <!-- Network Recv -->
+                <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-slate-500 uppercase font-semibold">Net Recv</span>
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/>
+                        </svg>
+                    </div>
+                    <p class="text-2xl font-bold text-white" id="net-recv">--</p>
+                    <p class="text-xs text-slate-600 mt-3">MB total</p>
+                </div>
+                <!-- Uptime -->
+                <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-slate-500 uppercase font-semibold">Uptime</span>
+                        <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <p class="text-xl font-bold text-white" id="uptime">--</p>
+                    <p class="text-xs text-slate-600 mt-3">since boot</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -120,5 +210,37 @@
         </div>
         {% endif %}
     </div>
+
+    <script>
+        function fetchStats() {
+            fetch('{{ url_for("admin_stats") }}')
+                .then(r => r.json())
+                .then(d => {
+                    document.getElementById('cpu-percent').textContent = d.cpu_percent + '%';
+                    document.getElementById('cpu-bar').style.width = d.cpu_percent + '%';
+                    document.getElementById('cpu-cores').textContent = d.cpu_count;
+
+                    document.getElementById('mem-percent').textContent = d.mem_percent + '%';
+                    document.getElementById('mem-bar').style.width = d.mem_percent + '%';
+                    document.getElementById('mem-used').textContent = d.mem_used_gb;
+                    document.getElementById('mem-total').textContent = d.mem_total_gb;
+
+                    document.getElementById('disk-percent').textContent = d.disk_percent + '%';
+                    document.getElementById('disk-bar').style.width = d.disk_percent + '%';
+                    document.getElementById('disk-free').textContent = d.disk_free_gb;
+
+                    document.getElementById('net-sent').textContent = d.net_sent_mb;
+                    document.getElementById('net-recv').textContent = d.net_recv_mb;
+                    document.getElementById('uptime').textContent = d.uptime;
+                })
+                .catch(() => {
+                    document.getElementById('stats-status').innerHTML =
+                        '<span class="w-1.5 h-1.5 bg-red-400 rounded-full"></span> Offline';
+                });
+        }
+
+        fetchStats();
+        setInterval(fetchStats, 5000);
+    </script>
 </body>
 </html>
