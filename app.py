@@ -328,23 +328,30 @@ def upload_images():
     db_session.add(archive_record)
     db_session.commit()
 
-    return redirect(url_for('show_results', csv_file=csv_filename))
+    # Clean up uploaded images and DB records (archive already saved)
+    cleanup()
+
+    # Store CSV filename in session for download
+    flask_session['pending_csv'] = csv_filename
+    flash(f'Extracted {len(unique_contacts)} contacts successfully!', 'success')
+    return redirect(url_for('download_page'))
 
 
-@app.route('/results')
-def show_results():
-    images = db_session.query(ImageRecord).all()
-    csv_file = request.args.get('csv_file', None)
-    return render_template('results.html', images=images, csv_file=csv_file)
+@app.route('/download')
+def download_page():
+    csv_file = flask_session.get('pending_csv', None)
+    if not csv_file or not os.path.exists(csv_file):
+        flash('No CSV available. Please upload images first.', 'error')
+        return redirect(url_for('upload_form'))
+    return render_template('download.html', csv_file=csv_file)
 
 
-@app.route('/download/<csv_file>')
-def download_csv(csv_file):
-    if os.path.exists(csv_file):
-        response = send_file(csv_file, as_attachment=True)
-        cleanup()
-        return response
-    return "CSV file not found", 404
+@app.route('/download/csv')
+def download_csv():
+    csv_file = flask_session.pop('pending_csv', None)
+    if csv_file and os.path.exists(csv_file):
+        return send_file(csv_file, as_attachment=True)
+    return redirect(url_for('upload_form'))
 
 
 # ==================== ADMIN PANEL ====================
